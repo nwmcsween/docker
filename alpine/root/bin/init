@@ -1,0 +1,62 @@
+#!/bin/sh
+set -e
+
+[ -z "$PGROUP" ] && export PGROUP="_user"
+[ -z "$PUSER" ] && export PUSER="_user"
+[ -z "$PUID" ] && export PUID="1000"
+[ -z "$PGID" ] && export PGID="1000"
+[ "$PUID" -ne "$PGID" ] && export PGROUP="_group"
+export PROUTE="$(ip route | awk '/default/ { print $3 }')"
+
+[ -z "$RETRIES" ] && RETRIES=3
+
+pexit1() {
+    printf "%s\n" "$1"
+    exit 1
+}
+
+pexit0() {
+    printf "%s\n" "$1"
+    exit 0
+}
+
+pret1() {
+    printf "%s\n" "$1"
+    return 1
+}
+
+pret0() {
+    printf "%s\n" "$1"
+    return 0
+}
+
+is_cmd() {
+    command -v "$1" > /dev/null 2>&1 && return 0
+    return 1
+}
+
+needed_cmd() {
+    for c in "$@"; do
+        printf "Checking for command %s in PATH... " "$c" && is_cmd "$c" && pret0 "found." || pret1 "missing command!"
+    done
+}
+
+needed_set() {
+    for e in "$@"; do
+        printf "Checking if string is set... " && [ -n "$e" ] && pret0 "set." || pret1 "unset!"
+    done
+}
+
+for i in /etc/entrypoint.d/*.sh; do
+    re=$RETRIES
+    ret=1
+    printf "Running %s...\n" "$i"
+    while [ $((re = re - 1)) -ge 0 ] && [ $ret -ne 0 ]; do
+        ( trap - INT QUIT TSTP; . "$i" ) | sed 's:^:\t:g' && echo "done" || pret1 "failed to run $i retrying..."
+        ret=$?
+    done
+    [ ! $? ] && pexit1 "failed to run $i"
+done
+
+printf "Executing main command...\n"
+exec "$@"

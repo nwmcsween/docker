@@ -1,0 +1,30 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+trigger:
+  event:
+    - tag
+
+steps:
+  - name: Generate tags
+    image: alpine/git
+    commands:
+      - echo "TAGS=\"${DRONE_COMMIT_SHA:0:8} $$(basename ${DRONE_TAG})\"" > .env
+      - echo "REPO=\"${DRONE_REPO}/$$(dirname ${DRONE_TAG})\"" >> .env
+      - echo "DOCKERFILE=\"$$(dirname ${DRONE_TAG})/Dockerfile\"" >> .env
+      - echo "VERSION=\"$$(basename ${DRONE_TAG})\"" >> .env
+  - name: Generate image
+    image: gcr.io/kaniko-project/executor:debug # debug is required for sh
+    environment:
+      REGISTRY_USERNAME:
+        from_secret: REGISTRY_USERNAME
+      REGISTRY_PASSWORD:
+        from_secret: REGISTRY_PASSWORD
+      REGISTRY_URL:
+        from_secret: REGISTRY_URL
+    commands:
+      - . .env
+      - echo "{\"auths\":{\"$$REGISTRY_URL\":{\"username\":\"$$REGISTRY_USERNAME\",\"password\":\"$$REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+      - for t in $$TAGS; /kaniko/executor --context $$(dirname $${DOCKERIFLE}) --build-arg "$$VERSION" --dockerfile $$DOCKERFILE --reproducible --destination=$$REGISTRY_URL/$$REPO/$$t; done
