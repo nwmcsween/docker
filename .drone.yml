@@ -25,6 +25,7 @@ steps:
       REGISTRY_URL:
         from_secret: REGISTRY_URL
     commands:
-      - . .env
-      - echo "{\"auths\":{\"$$REGISTRY_URL\":{\"username\":\"$$REGISTRY_USERNAME\",\"password\":\"$$REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
-      - for t in $$TAGS; /kaniko/executor --context $$(dirname $${DOCKERIFLE}) --build-arg "$$VERSION" --dockerfile $$DOCKERFILE --reproducible --destination=$$REGISTRY_URL/$$REPO/$$t; done
+      - echo IN KANIKO
+      #- . .env
+      #- echo "{\"auths\":{\"$$REGISTRY_URL\":{\"username\":\"$$REGISTRY_USERNAME\",\"password\":\"$$REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+      #- for t in $$TAGS; /kaniko/executor --context $$(dirname $${DOCKERIFLE}) --build-arg "$$VERSION" --dockerfile $$DOCKERFILE --reproducible --destination=$$REGISTRY_URL/$$REPO/$$t; done
