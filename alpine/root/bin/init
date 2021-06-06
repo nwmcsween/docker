@@ -1,17 +1,16 @@
 #!/bin/sh
-set -e
-
-[ -z "$PGROUP" ] && export PGROUP="_user"
-[ -z "$PUSER" ] && export PUSER="_user"
-[ -z "$PUID" ] && export PUID="1000"
-[ -z "$PGID" ] && export PGID="1000"
-[ "$PUID" -ne "$PGID" ] && export PGROUP="_group"
-export PROUTE="$(ip route | awk '/default/ { print $3 }')"
+set -e; [ -n "$TRACE" ] && set -x
+[ -z "$GROUP_NAME" ] && export GROUP_NAME="_user"
+[ -z "$USER_NAME" ] && export USER_NAME="_user"
+[ -z "$USER_ID" ] && export USER_ID="10000"
+[ -z "$GROUP_ID" ] && export GROUP_ID="10000"
+[ "$USER_ID" -ne "$GROUP_ID" ] && export GROUP_NAME="_group"
+export ROUTE="$(ip route | awk '/default/ { print $3 }')"
 
 [ -z "$RETRIES" ] && RETRIES=3
 
 pexit1() {
-    printf "%s\n" "$1"
+    printf "%s\n" "$1" 1>&2
     exit 1
 }
 
@@ -37,17 +36,28 @@ is_cmd() {
 
 needed_cmd() {
     for c in "$@"; do
-        printf "Checking for command %s in PATH... " "$c" && is_cmd "$c" && pret0 "found." || pret1 "missing command!"
+        printf "Checking for command %s in PATH... " "$c"
+        if is_cmd "$c"; then
+            pret0 "found."
+        else
+            pret1 "missing command!"
+        fi
     done
 }
 
 needed_set() {
     for e in "$@"; do
-        printf "Checking if string is set... " && [ -n "$e" ] && pret0 "set." || pret1 "unset!"
+        printf "Checking if %s is set... " "$e"
+        if [ -n "$(eval "printf \"%s\" \"\$$e\"")" ]; then
+            pret0 "set."
+        else
+            pret1 "unset!"
+        fi
     done
 }
 
 for i in /etc/entrypoint.d/*.sh; do
+    [ ! -f "$i" ] && continue
     re=$RETRIES
     ret=1
     printf "Running %s...\n" "$i"
@@ -59,4 +69,4 @@ for i in /etc/entrypoint.d/*.sh; do
 done
 
 printf "Executing main command...\n"
-exec "$@"
+su-exec $USER_ID:$GROUP_ID "$@"
