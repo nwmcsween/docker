@@ -10,7 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # add depth crap
       - name: Checkout
         uses: actions/checkout@v2
 
