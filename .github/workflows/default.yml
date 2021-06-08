@@ -7,7 +7,8 @@ on:
       - '*'
 
 jobs:
-  build:
+  container-image:
+    environment: container-image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -31,6 +32,7 @@ jobs:
       - name: Build Docker Image
         uses: docker/build-push-action@v2
         with:
+          build-args: version=${{ steps.tags.outputs.version }}
           context: ./${{ steps.tags.outputs.package }}
           tags: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ steps.tags.outputs.version }},${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
           load: true
@@ -56,6 +58,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v2
         with:
+          build-args: version=${{ steps.tags.outputs.version }}
           context: ./${{ steps.tags.outputs.package }}
           tags: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ steps.tags.outputs.version }},${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
