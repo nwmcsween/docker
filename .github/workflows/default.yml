@@ -17,7 +17,7 @@ jobs:
         id: tags
         uses: olegtarasov/get-tag@v2.1
         with:
-          tagRegex: '(?<package>.*)/(?<version>.*)'
+          tagRegex: '(?<package>.*):(?<version>.*)'
 
       - name: QEMU
         uses: docker/setup-qemu-action@v1
