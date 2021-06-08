@@ -37,21 +37,32 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
+      # Need platformless otherwise load doesn't work: https://github.com/docker/buildx/issues/59
       - name: Build Docker Image
         id: docker_build
         uses: docker/build-push-action@v2
         with:
           context: ./${{ steps.tags.outputs.package }}
           tags: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ steps.tags.outputs.version }},${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
-          platforms: linux/amd64,linux/arm64
+          load: true
 
-      - name: Analyze Docker Image
-        uses: yuichielectric/dive-action@0.0.4
+      - name: Scan Docker Image
+        uses: anchore/scan-action@v2
         with:
           image: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
-          config-file: ./${{ steps.tags.outputs.package }}/.dive.yml
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker Image
-        run: |
-          docker push ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
+      # Disable until: https://github.com/yuichielectric/dive-action/pull/204
+      #      - name: Analyze Docker Image
+      #        uses: yuichielectric/dive-action@0.0.4
+      #        with:
+      #          image: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
+      #          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./${{ steps.tags.outputs.package }}
+          tags: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ steps.tags.outputs.version }},${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
+          platforms: linux/amd64,linux/arm64
+          push: true
