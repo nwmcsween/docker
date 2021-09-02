@@ -38,7 +38,7 @@ jobs:
           load: true
 
       - name: Scan Docker Image
-        uses: anchore/scan-action@v2
+        uses: anchore/scan-action@v3
         with:
           image: ${{ secrets.REGISTRY_NAMESPACE }}/${{ steps.tags.outputs.package }}:${{ github.sha }}
 
