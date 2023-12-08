@@ -1,4 +1,4 @@
-ARG version=3.13
+ARG version=3.19
 FROM alpine:${version} as base
 
 RUN apk --no-cache --purge upgrade && \
